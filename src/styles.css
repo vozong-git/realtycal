@@ -143,3 +143,16 @@ button.danger { color: var(--danger); }
 .actions { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-top: 20px; }
 .actions button { padding: 14px; }
 .actions .ghost { background: var(--chip); color: var(--text); }
+
+.topbar-actions { display: flex; gap: 6px; }
+button.share { color: var(--primary); }
+
+.banner { border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; font-size: 14px; }
+.banner.error { background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); }
+.banner small { display: block; margin-top: 4px; opacity: 0.8; word-break: break-all; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 20;
+  background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px;
+  font-size: 14px; max-width: calc(100% - 32px);
+}

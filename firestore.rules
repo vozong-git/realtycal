@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// 비밀 링크 방식: 방 ID(22자 무작위)를 아는 사람만 그 방의 매물을 읽고 쓸 수 있다.
+// 방 목록을 훑어보는 규칙은 없으므로 다른 방은 찾을 수 없다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /rooms/{roomId}/listings/{listingId} {
+      allow read, delete: if roomId.size() >= 20;
+      allow create, update: if roomId.size() >= 20
+        && request.resource.data.keys().hasOnly(
+             ['id', 'name', 'type', 'price', 'monthlyRent', 'maintenance', 'loanAmount', 'loanRate', 'loanYears'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.type in ['monthly', 'jeonse', 'purchase'];
+    }
+  }
+}

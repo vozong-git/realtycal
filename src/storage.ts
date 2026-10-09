@@ -2,6 +2,7 @@ import type { Listing, Settings } from './types';
 
 const LISTINGS_KEY = 'realtycal.listings';
 const SETTINGS_KEY = 'realtycal.settings';
+const ROOM_KEY = 'realtycal.room';
 
 export const DEFAULT_SETTINGS: Settings = { includeOpportunityCost: false, depositRate: 3 };
 
@@ -26,3 +27,5 @@ export const loadListings = () => read<Listing[]>(LISTINGS_KEY, []);
 export const saveListings = (listings: Listing[]) => write(LISTINGS_KEY, listings);
 export const loadSettings = () => ({ ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(SETTINGS_KEY, {}) });
 export const saveSettings = (settings: Settings) => write(SETTINGS_KEY, settings);
+export const loadRoom = () => read<string | null>(ROOM_KEY, null);
+export const saveRoom = (roomId: string) => write(ROOM_KEY, roomId);

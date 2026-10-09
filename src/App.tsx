@@ -1,21 +1,99 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { calcCost } from './calc';
 import ListingCard from './components/ListingCard';
 import ListingForm from './components/ListingForm';
-import { loadListings, loadSettings, saveListings, saveSettings } from './storage';
+import { firebaseConfig } from './firebaseConfig';
+import { resolveRoom, roomFromUrl, shareUrl } from './room';
+import { loadListings, loadSettings, saveSettings } from './storage';
+import { createLocalStore, type ListingStore } from './store';
 import { parseNumber } from './format';
 import type { Listing, Settings } from './types';
 
 type Editing = { mode: 'new' } | { mode: 'edit'; listing: Listing } | null;
 
+type Sync =
+  | { status: 'local' }
+  | { status: 'connecting' }
+  | { status: 'shared'; roomId: string }
+  | { status: 'error'; message: string };
+
 export default function App() {
-  const [listings, setListings] = useState<Listing[]>(loadListings);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [editing, setEditing] = useState<Editing>(null);
   const [rateText, setRateText] = useState(String(settings.depositRate));
+  const [sync, setSync] = useState<Sync>(firebaseConfig ? { status: 'connecting' } : { status: 'local' });
+  const [toast, setToast] = useState('');
+  const storeRef = useRef<ListingStore | null>(null);
 
-  useEffect(() => saveListings(listings), [listings]);
   useEffect(() => saveSettings(settings), [settings]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe = () => {};
+    const onError = (e: Error) => setSync({ status: 'error', message: e.message });
+
+    (async () => {
+      let store: ListingStore;
+      let roomId: string | null = null;
+      if (firebaseConfig) {
+        const room = resolveRoom();
+        roomId = room.roomId;
+        const { createFirestoreStore } = await import('./firestoreStore');
+        const shared = createFirestoreStore(firebaseConfig, roomId);
+        // 처음 공유를 시작할 때 이 기기에 있던 매물을 방으로 옮긴다
+        const local = loadListings();
+        if (room.created && local.length) shared.importListings(local).catch(onError);
+        store = shared;
+      } else {
+        store = createLocalStore();
+      }
+      if (cancelled) return;
+      storeRef.current = store;
+      unsubscribe = store.subscribe((next) => {
+        setListings(next);
+        if (roomId) setSync({ status: 'shared', roomId });
+      }, onError);
+    })().catch(onError);
+
+    // 앱을 켜둔 채 다른 공유 링크를 열면 그 방으로 다시 시작
+    const onHashChange = () => {
+      const next = roomFromUrl();
+      if (firebaseConfig && next) location.reload();
+    };
+    window.addEventListener('hashchange', onHashChange);
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      window.removeEventListener('hashchange', onHashChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  function handleWriteError(e: unknown) {
+    setSync({ status: 'error', message: e instanceof Error ? e.message : String(e) });
+  }
+
+  async function share() {
+    if (sync.status !== 'shared') return;
+    const url = shareUrl(sync.roomId);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'RealtyCal 매물 비교', url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setToast('링크를 복사했어요. 같이 볼 사람에게 보내주세요.');
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') prompt('이 링크를 복사해서 보내주세요', url);
+    }
+  }
 
   const rows = useMemo(
     () =>
@@ -26,21 +104,19 @@ export default function App() {
   );
 
   function save(listing: Listing) {
-    setListings((prev) =>
-      prev.some((l) => l.id === listing.id)
-        ? prev.map((l) => (l.id === listing.id ? listing : l))
-        : [...prev, listing],
-    );
+    storeRef.current?.upsert(listing).catch(handleWriteError);
     setEditing(null);
   }
 
   function duplicate(listing: Listing) {
-    setListings((prev) => [...prev, { ...listing, id: crypto.randomUUID(), name: `${listing.name} (복사)` }]);
+    storeRef.current
+      ?.upsert({ ...listing, id: crypto.randomUUID(), name: `${listing.name} (복사)` })
+      .catch(handleWriteError);
   }
 
   function remove(listing: Listing) {
     if (confirm(`"${listing.name}"을(를) 삭제할까요?`)) {
-      setListings((prev) => prev.filter((l) => l.id !== listing.id));
+      storeRef.current?.remove(listing.id).catch(handleWriteError);
     }
   }
 
@@ -48,10 +124,24 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <h1>RealtyCal</h1>
-        <button className="primary" onClick={() => setEditing({ mode: 'new' })}>
-          + 매물
-        </button>
+        <div className="topbar-actions">
+          {sync.status === 'shared' && (
+            <button className="ghost share" onClick={share}>
+              공유
+            </button>
+          )}
+          <button className="primary" onClick={() => setEditing({ mode: 'new' })}>
+            + 매물
+          </button>
+        </div>
       </header>
+
+      {sync.status === 'error' && (
+        <div className="banner error">
+          공유 저장소에 연결하지 못했어요. 인터넷 연결이나 Firestore 규칙을 확인해 주세요.
+          <small>{sync.message}</small>
+        </div>
+      )}
 
       <section className="settings">
         <label className="toggle">
@@ -83,10 +173,13 @@ export default function App() {
         </p>
       </section>
 
-      {rows.length === 0 ? (
+      {sync.status === 'connecting' ? (
+        <div className="empty">불러오는 중…</div>
+      ) : rows.length === 0 ? (
         <div className="empty">
           <p>아직 매물이 없어요.</p>
           <p>월세·전세·매매 매물을 추가하면 월 고정비를 비교해 드려요.</p>
+          {sync.status === 'shared' && <p>위의 공유 버튼으로 링크를 보내면 같이 보고 수정할 수 있어요.</p>}
           <button className="primary" onClick={() => setEditing({ mode: 'new' })}>
             첫 매물 추가하기
           </button>
@@ -106,6 +199,8 @@ export default function App() {
           ))}
         </main>
       )}
+
+      {toast && <div className="toast">{toast}</div>}
 
       {editing && (
         <ListingForm
