@@ -4,7 +4,12 @@ const LISTINGS_KEY = 'realtycal.listings';
 const SETTINGS_KEY = 'realtycal.settings';
 const ROOM_KEY = 'realtycal.room';
 
-export const DEFAULT_SETTINGS: Settings = { includeOpportunityCost: false, depositRate: 3 };
+export const DEFAULT_SETTINGS: Settings = {
+  includeOpportunityCost: false,
+  depositRate: 3,
+  sortBy: 'monthly',
+  typeFilter: 'all',
+};
 
 function read<T>(key: string, fallback: T): T {
   try {

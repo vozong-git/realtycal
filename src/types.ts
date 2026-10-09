@@ -23,11 +23,24 @@ export interface Listing {
   link: string;
 }
 
+export type SortKey = 'monthly' | 'cash' | 'capital' | 'name';
+export type TypeFilter = 'all' | LeaseType;
+
+/** 기기마다 따로 저장되는 보기 설정 */
 export interface Settings {
   includeOpportunityCost: boolean;
   /** 자기자금을 예금에 넣었을 때의 연 이자율 (%) */
   depositRate: number;
+  sortBy: SortKey;
+  typeFilter: TypeFilter;
 }
+
+export const SORT_LABEL: Record<SortKey, string> = {
+  monthly: '월 고정비순',
+  cash: '입주 현금순',
+  capital: '자기자금순',
+  name: '이름순',
+};
 
 export const TYPE_LABEL: Record<LeaseType, string> = {
   monthly: '월세',

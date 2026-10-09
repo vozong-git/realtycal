@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { calcCost } from './calc';
+import { calcCost, calcOneTimeCost } from './calc';
 import ListingCard from './components/ListingCard';
 import ListingForm from './components/ListingForm';
+import ListToolbar from './components/ListToolbar';
 import { firebaseConfig } from './firebaseConfig';
 import { resolveRoom, roomFromUrl, shareUrl } from './room';
 import { loadListings, loadSettings, saveSettings } from './storage';
 import { createLocalStore, type ListingStore } from './store';
 import { parseNumber } from './format';
-import type { Listing, Settings } from './types';
+import { TYPE_LABEL, type Listing, type Settings } from './types';
+
+type Row = { listing: Listing; cost: ReturnType<typeof calcCost> };
 
 type Editing = { mode: 'new' } | { mode: 'edit'; listing: Listing } | null;
 
@@ -95,13 +98,25 @@ export default function App() {
     }
   }
 
-  const rows = useMemo(
-    () =>
-      listings
-        .map((listing) => ({ listing, cost: calcCost(listing, settings) }))
-        .sort((a, b) => a.cost.total - b.cost.total),
-    [listings, settings],
-  );
+  const rows = useMemo(() => {
+    const sortValue = {
+      monthly: (r: Row) => r.cost.total,
+      cash: (r: Row) => r.cost.ownCapital + calcOneTimeCost(r.listing).total,
+      capital: (r: Row) => r.cost.ownCapital,
+    };
+    return listings
+      .filter((l) => settings.typeFilter === 'all' || l.type === settings.typeFilter)
+      .map((listing) => ({ listing, cost: calcCost(listing, settings) }))
+      .sort((a, b) =>
+        settings.sortBy === 'name'
+          ? a.listing.name.localeCompare(b.listing.name, 'ko')
+          : sortValue[settings.sortBy](a) - sortValue[settings.sortBy](b) || a.cost.total - b.cost.total,
+      );
+  }, [listings, settings]);
+
+  // "최저"는 정렬과 상관없이 보이는 매물 중 월 고정비가 가장 낮은 매물
+  const cheapestId =
+    rows.length > 1 ? rows.reduce((min, r) => (r.cost.total < min.cost.total ? r : min)).listing.id : null;
 
   function save(listing: Listing) {
     storeRef.current?.upsert(listing).catch(handleWriteError);
@@ -175,6 +190,16 @@ export default function App() {
 
       {sync.status === 'connecting' ? (
         <div className="empty">불러오는 중…</div>
+      ) : listings.length > 0 && rows.length === 0 ? (
+        <>
+          <ListToolbar listings={listings} settings={settings} onChange={setSettings} />
+          <div className="empty">
+            <p>{settings.typeFilter !== 'all' && TYPE_LABEL[settings.typeFilter]} 매물이 없어요.</p>
+            <button className="ghost" onClick={() => setSettings((s) => ({ ...s, typeFilter: 'all' }))}>
+              전체 보기
+            </button>
+          </div>
+        </>
       ) : rows.length === 0 ? (
         <div className="empty">
           <p>아직 매물이 없어요.</p>
@@ -186,12 +211,13 @@ export default function App() {
         </div>
       ) : (
         <main className="list">
-          {rows.map(({ listing, cost }, i) => (
+          {listings.length >= 2 && <ListToolbar listings={listings} settings={settings} onChange={setSettings} />}
+          {rows.map(({ listing, cost }) => (
             <ListingCard
               key={listing.id}
               listing={listing}
               cost={cost}
-              cheapest={i === 0 && rows.length > 1}
+              cheapest={listing.id === cheapestId}
               onEdit={() => setEditing({ mode: 'edit', listing })}
               onDuplicate={() => duplicate(listing)}
               onDelete={() => remove(listing)}

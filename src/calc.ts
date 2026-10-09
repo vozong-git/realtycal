@@ -29,7 +29,10 @@ export function amortizedPayment(amount: number, annualRate: number, years: numb
   return (amount * r) / (1 - Math.pow(1 + r, -n));
 }
 
-export function calcCost(listing: Listing, settings: Settings): CostBreakdown {
+export function calcCost(
+  listing: Listing,
+  settings: Pick<Settings, 'includeOpportunityCost' | 'depositRate'>,
+): CostBreakdown {
   const loan = Math.max(listing.loanAmount, 0);
   const rent = listing.type === 'monthly' ? listing.monthlyRent : 0;
   const maintenance = listing.maintenance;

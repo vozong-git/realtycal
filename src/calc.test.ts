@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { acquisitionTax, amortizedPayment, brokerFee, calcCost, calcOneTimeCost } from './calc';
 import type { Listing, Settings } from './types';
 
-const off: Settings = { includeOpportunityCost: false, depositRate: 3 };
-const on: Settings = { includeOpportunityCost: true, depositRate: 3 };
+const off: Pick<Settings, 'includeOpportunityCost' | 'depositRate'> = { includeOpportunityCost: false, depositRate: 3 };
+const on: Pick<Settings, 'includeOpportunityCost' | 'depositRate'> = { includeOpportunityCost: true, depositRate: 3 };
 
 function listing(partial: Partial<Listing>): Listing {
   return {
