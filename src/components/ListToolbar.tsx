@@ -35,18 +35,21 @@ export default function ListToolbar({ listings, dongs, settings, onChange }: Pro
             />
           ))}
         </div>
-        <select
-          className="sort"
-          aria-label="정렬"
-          value={settings.sortBy}
-          onChange={(e) => onChange((s) => ({ ...s, sortBy: e.target.value as SortKey }))}
-        >
-          {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
-            <option key={k} value={k}>
-              {SORT_LABEL[k]}
-            </option>
-          ))}
-        </select>
+        {/* 선택된 항목 길이만큼만 자리를 차지하도록, 보이는 글자 위에 투명한 select를 겹친다 */}
+        <label className="sort">
+          {SORT_LABEL[settings.sortBy]} ▾
+          <select
+            aria-label="정렬"
+            value={settings.sortBy}
+            onChange={(e) => onChange((s) => ({ ...s, sortBy: e.target.value as SortKey }))}
+          >
+            {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
+              <option key={k} value={k}>
+                {SORT_LABEL[k]}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
       {showDongs && (
         <div className="chips" role="radiogroup" aria-label="동">

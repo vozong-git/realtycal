@@ -21,7 +21,9 @@ export interface Listing {
   link: string;
 }
 
-export type SortKey = 'monthly' | 'price';
+export type SortField = 'monthly' | 'price' | 'loan';
+/** 'monthly' = 월 고정비 낮은순, 'monthly-desc' = 높은순 */
+export type SortKey = SortField | `${SortField}-desc`;
 export type TypeFilter = 'all' | LeaseType;
 
 /** 기기마다 따로 저장되는 보기 설정 */
@@ -36,8 +38,12 @@ export interface Settings {
 }
 
 export const SORT_LABEL: Record<SortKey, string> = {
-  monthly: '월 고정비순',
-  price: '보증금순',
+  'monthly-desc': '월 고정비 높은순',
+  monthly: '월 고정비 낮은순',
+  'price-desc': '보증금 높은순',
+  price: '보증금 낮은순',
+  'loan-desc': '대출금 높은순',
+  loan: '대출금 낮은순',
 };
 
 export const TYPE_LABEL: Record<LeaseType, string> = {

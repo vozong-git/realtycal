@@ -191,9 +191,10 @@ button.chip {
 button.chip.active { background: var(--text); color: var(--bg); }
 button.chip.empty-type { opacity: 0.45; }
 .sort {
-  flex: none; font: inherit; font-size: 13px; color: var(--text); background: transparent;
-  border: none; padding: 5px 2px; cursor: pointer;
+  position: relative; flex: none; font-size: 13px; font-weight: 600; color: var(--text);
+  padding: 5px 2px; white-space: nowrap; cursor: pointer;
 }
+.sort select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
 
 .card h3 .dong { margin-left: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
 .row.name-row { grid-template-columns: 2fr 1fr; margin-bottom: 12px; }

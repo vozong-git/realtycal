@@ -8,7 +8,7 @@ import { resolveRoom, roomFromUrl, shareUrl } from './room';
 import { loadListings, loadSettings, saveSettings } from './storage';
 import { createLocalStore, type ListingStore } from './store';
 import { parseNumber } from './format';
-import { TYPE_LABEL, type Listing, type Settings } from './types';
+import { TYPE_LABEL, type Listing, type Settings, type SortField } from './types';
 
 type Row = { listing: Listing; cost: ReturnType<typeof calcCost> };
 
@@ -99,18 +99,21 @@ export default function App() {
   }
 
   const rows = useMemo(() => {
-    const sortValue = {
-      monthly: (r: Row) => r.cost.total,
+    const sortValue: Record<SortField, (r: Row) => number> = {
+      monthly: (r) => r.cost.total,
       // 보증금 / 전세금 / 매매가
-      price: (r: Row) => r.listing.price,
+      price: (r) => r.listing.price,
+      loan: (r) => r.listing.loanAmount,
     };
+    const [field, dir] = settings.sortBy.split('-') as [SortField, string?];
+    const sign = dir === 'desc' ? -1 : 1;
     return listings
       .filter((l) => settings.typeFilter === 'all' || l.type === settings.typeFilter)
       .filter((l) => !settings.dongFilter || l.dong === settings.dongFilter)
       .map((listing) => ({ listing, cost: calcCost(listing, settings) }))
       .sort(
         (a, b) =>
-          sortValue[settings.sortBy](a) - sortValue[settings.sortBy](b) || a.cost.total - b.cost.total,
+          sign * (sortValue[field](a) - sortValue[field](b)) || a.cost.total - b.cost.total,
       );
   }, [listings, settings]);
 
