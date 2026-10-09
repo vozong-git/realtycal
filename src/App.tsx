@@ -3,6 +3,7 @@ import { calcCost } from './calc';
 import ListingCard from './components/ListingCard';
 import ListingForm from './components/ListingForm';
 import ListToolbar from './components/ListToolbar';
+import { ShareIcon } from './components/icons';
 import { firebaseConfig } from './firebaseConfig';
 import { resolveRoom, roomFromUrl, shareUrl } from './room';
 import { loadListings, loadSettings, saveSettings } from './storage';
@@ -100,7 +101,8 @@ export default function App() {
 
   const rows = useMemo(() => {
     const sortValue: Record<SortField, (r: Row) => number> = {
-      monthly: (r) => r.cost.total,
+      // 기회비용을 켜고 꺼도 카드 순서는 그대로 두고 금액만 바뀌게, 기회비용을 뺀 금액으로 정렬
+      monthly: (r) => r.cost.total - r.cost.opportunityCost,
       // 보증금 / 전세금 / 매매가
       price: (r) => r.listing.price,
       loan: (r) => r.listing.loanAmount,
@@ -113,7 +115,7 @@ export default function App() {
       .map((listing) => ({ listing, cost: calcCost(listing, settings) }))
       .sort(
         (a, b) =>
-          sign * (sortValue[field](a) - sortValue[field](b)) || a.cost.total - b.cost.total,
+          sign * (sortValue[field](a) - sortValue[field](b)) || sortValue.monthly(a) - sortValue.monthly(b),
       );
   }, [listings, settings]);
 
@@ -149,8 +151,8 @@ export default function App() {
         <h1>RealtyCal</h1>
         <div className="topbar-actions">
           {sync.status === 'shared' && (
-            <button className="ghost share" onClick={share}>
-              공유
+            <button className="ghost icon share" onClick={share} aria-label="공유" title="공유">
+              <ShareIcon />
             </button>
           )}
           <button className="primary" onClick={() => setEditing({ mode: 'new' })}>
@@ -220,7 +222,7 @@ export default function App() {
         <div className="empty">
           <p>아직 매물이 없어요.</p>
           <p>월세·전세·매매 매물을 추가하면 월 고정비를 비교해 드려요.</p>
-          {sync.status === 'shared' && <p>위의 공유 버튼으로 링크를 보내면 같이 보고 수정할 수 있어요.</p>}
+          {sync.status === 'shared' && <p>위의 공유 아이콘으로 링크를 보내면 같이 보고 수정할 수 있어요.</p>}
           <button className="primary" onClick={() => setEditing({ mode: 'new' })}>
             첫 매물 추가하기
           </button>
