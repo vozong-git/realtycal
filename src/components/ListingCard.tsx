@@ -24,15 +24,16 @@ export default function ListingCard({ listing, cost, cheapest, onEdit, onDuplica
   const oneTimeItems: [string, number][] = [
     ['중개수수료 (상한)', oneTime.brokerFee],
     ['취득세 (1주택 기준)', oneTime.acquisitionTax],
-    ['이사비', oneTime.movingCost],
-    ['기타', oneTime.otherCost],
   ];
 
   return (
     <article className={`card ${cheapest ? 'cheapest' : ''}`}>
       <header>
         <span className={`badge ${listing.type}`}>{TYPE_LABEL[listing.type]}</span>
-        <h3>{listing.name}</h3>
+        <h3>
+          {listing.name}
+          {listing.dong && <small className="dong">{listing.dong}</small>}
+        </h3>
         {cheapest && <span className="best">최저</span>}
       </header>
 

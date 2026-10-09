@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
   depositRate: 3,
   sortBy: 'monthly',
   typeFilter: 'all',
+  dongFilter: '',
 };
 
 function read<T>(key: string, fallback: T): T {

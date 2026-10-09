@@ -14,10 +14,8 @@ export interface Listing {
   loanRate: number;
   /** 상환 기간(년), 매매만 사용 */
   loanYears: number;
-  /** 이사비 (1회) */
-  movingCost: number;
-  /** 기타 1회성 비용: 청소, 인테리어 등 */
-  otherCost: number;
+  /** 동 이름 (예: 성수동). 동별 필터에 쓴다 */
+  dong: string;
   memo: string;
   /** 매물 링크 (http/https만) */
   link: string;
@@ -33,6 +31,8 @@ export interface Settings {
   depositRate: number;
   sortBy: SortKey;
   typeFilter: TypeFilter;
+  /** '' 이면 모든 동 */
+  dongFilter: string;
 }
 
 export const SORT_LABEL: Record<SortKey, string> = {

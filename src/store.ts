@@ -17,15 +17,18 @@ const DEFAULTS: Omit<Listing, 'id'> = {
   loanAmount: 0,
   loanRate: 0,
   loanYears: 30,
-  movingCost: 0,
-  otherCost: 0,
+  dong: '',
   memo: '',
   link: '',
 };
 
-/** 저장된 데이터에 빠진 필드가 있어도 안전하게 채운다 */
+/** 저장된 데이터에 빠진 필드는 채우고, 모르는 필드는 버린다 */
 export function normalizeListing(data: Partial<Listing>, id: string): Listing {
-  return { ...DEFAULTS, ...data, id };
+  const listing = { ...DEFAULTS, id } as Listing;
+  for (const key of Object.keys(DEFAULTS) as (keyof typeof DEFAULTS)[]) {
+    if (data[key] !== undefined) (listing as unknown as Record<string, unknown>)[key] = data[key];
+  }
+  return listing;
 }
 
 /** 이 기기에만 저장 (Firebase 미설정 시) */

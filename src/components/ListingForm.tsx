@@ -4,6 +4,8 @@ import { formatManwon, normalizeLink, parseNumber, withCommas } from '../format'
 
 interface Props {
   initial?: Listing;
+  /** 이미 입력된 동 목록 (자동완성) */
+  dongs: string[];
   onSave: (listing: Listing) => void;
   onCancel: () => void;
 }
@@ -14,9 +16,7 @@ type Fields =
   | 'maintenance'
   | 'loanAmount'
   | 'loanRate'
-  | 'loanYears'
-  | 'movingCost'
-  | 'otherCost';
+  | 'loanYears';
 
 const TYPES: LeaseType[] = ['monthly', 'jeonse', 'purchase'];
 
@@ -24,9 +24,10 @@ function toText(n: number | undefined): string {
   return n ? withCommas(String(n)) : '';
 }
 
-export default function ListingForm({ initial, onSave, onCancel }: Props) {
+export default function ListingForm({ initial, dongs, onSave, onCancel }: Props) {
   const [type, setType] = useState<LeaseType>(initial?.type ?? 'monthly');
   const [name, setName] = useState(initial?.name ?? '');
+  const [dong, setDong] = useState(initial?.dong ?? '');
   const [values, setValues] = useState<Record<Fields, string>>({
     price: toText(initial?.price),
     monthlyRent: toText(initial?.monthlyRent),
@@ -34,12 +35,10 @@ export default function ListingForm({ initial, onSave, onCancel }: Props) {
     loanAmount: toText(initial?.loanAmount),
     loanRate: initial?.loanRate ? String(initial.loanRate) : '',
     loanYears: String(initial?.loanYears ?? 30),
-    movingCost: toText(initial?.movingCost),
-    otherCost: toText(initial?.otherCost),
   });
   const [memo, setMemo] = useState(initial?.memo ?? '');
   const [link, setLink] = useState(initial?.link ?? '');
-  const hasExtra = Boolean(initial?.movingCost || initial?.otherCost || initial?.memo || initial?.link);
+  const hasExtra = Boolean(initial?.memo || initial?.link);
 
   const set = (field: Fields) => (text: string) =>
     setValues((v) => ({ ...v, [field]: withCommas(text) }));
@@ -58,8 +57,7 @@ export default function ListingForm({ initial, onSave, onCancel }: Props) {
       loanAmount: num('loanAmount'),
       loanRate: num('loanRate'),
       loanYears: num('loanYears') || 30,
-      movingCost: num('movingCost'),
-      otherCost: num('otherCost'),
+      dong: dong.replace(/\s+/g, ''),
       memo: memo.trim(),
       link: normalizeLink(link),
     });
@@ -85,10 +83,21 @@ export default function ListingForm({ initial, onSave, onCancel }: Props) {
           ))}
         </div>
 
-        <label className="field">
-          <span>이름</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 역삼 오피스텔 3층" />
-        </label>
+        <div className="row name-row">
+          <label className="field">
+            <span>이름</span>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 역삼 오피스텔 3층" />
+          </label>
+          <label className="field">
+            <span>동</span>
+            <input value={dong} onChange={(e) => setDong(e.target.value)} placeholder="예: 성수동" list="dong-options" />
+            <datalist id="dong-options">
+              {dongs.map((d) => (
+                <option key={d} value={d} />
+              ))}
+            </datalist>
+          </label>
+        </div>
 
         <MoneyField label={PRICE_LABEL[type]} value={values.price} onChange={set('price')} showEok />
         {type === 'monthly' && (
@@ -111,12 +120,7 @@ export default function ListingForm({ initial, onSave, onCancel }: Props) {
         </p>
 
         <details className="more-fields" open={hasExtra}>
-          <summary>이사 비용 · 메모 (선택)</summary>
-          <p className="hint">중개수수료{type === 'purchase' && '·취득세'}는 자동으로 계산돼요.</p>
-          <div className="row">
-            <MoneyField label="이사비" value={values.movingCost} onChange={set('movingCost')} />
-            <MoneyField label="기타 (청소 등)" value={values.otherCost} onChange={set('otherCost')} />
-          </div>
+          <summary>메모 · 링크 (선택)</summary>
           <label className="field">
             <span>메모</span>
             <textarea

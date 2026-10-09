@@ -66,8 +66,6 @@ export interface OneTimeCost {
   brokerFee: number;
   /** 취득세 + 지방교육세 (매매만) */
   acquisitionTax: number;
-  movingCost: number;
-  otherCost: number;
   total: number;
 }
 
@@ -118,13 +116,5 @@ export function acquisitionTax(price: number): number {
 export function calcOneTimeCost(listing: Listing): OneTimeCost {
   const fee = brokerFee(listing);
   const tax = listing.type === 'purchase' ? acquisitionTax(listing.price) : 0;
-  const moving = listing.movingCost || 0;
-  const other = listing.otherCost || 0;
-  return {
-    brokerFee: fee,
-    acquisitionTax: tax,
-    movingCost: moving,
-    otherCost: other,
-    total: fee + tax + moving + other,
-  };
+  return { brokerFee: fee, acquisitionTax: tax, total: fee + tax };
 }

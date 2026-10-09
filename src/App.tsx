@@ -106,6 +106,7 @@ export default function App() {
     };
     return listings
       .filter((l) => settings.typeFilter === 'all' || l.type === settings.typeFilter)
+      .filter((l) => !settings.dongFilter || l.dong === settings.dongFilter)
       .map((listing) => ({ listing, cost: calcCost(listing, settings) }))
       .sort((a, b) =>
         settings.sortBy === 'name'
@@ -113,6 +114,11 @@ export default function App() {
           : sortValue[settings.sortBy](a) - sortValue[settings.sortBy](b) || a.cost.total - b.cost.total,
       );
   }, [listings, settings]);
+
+  const dongs = useMemo(
+    () => [...new Set(listings.map((l) => l.dong).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')),
+    [listings],
+  );
 
   // "최저"는 정렬과 상관없이 보이는 매물 중 월 고정비가 가장 낮은 매물
   const cheapestId =
@@ -192,10 +198,18 @@ export default function App() {
         <div className="empty">불러오는 중…</div>
       ) : listings.length > 0 && rows.length === 0 ? (
         <>
-          <ListToolbar listings={listings} settings={settings} onChange={setSettings} />
+          <ListToolbar listings={listings} dongs={dongs} settings={settings} onChange={setSettings} />
           <div className="empty">
-            <p>{settings.typeFilter !== 'all' && TYPE_LABEL[settings.typeFilter]} 매물이 없어요.</p>
-            <button className="ghost" onClick={() => setSettings((s) => ({ ...s, typeFilter: 'all' }))}>
+            <p>
+              {[settings.dongFilter, settings.typeFilter !== 'all' && TYPE_LABEL[settings.typeFilter]]
+                .filter(Boolean)
+                .join(' ')}{' '}
+              매물이 없어요.
+            </p>
+            <button
+              className="ghost"
+              onClick={() => setSettings((s) => ({ ...s, typeFilter: 'all', dongFilter: '' }))}
+            >
               전체 보기
             </button>
           </div>
@@ -211,7 +225,7 @@ export default function App() {
         </div>
       ) : (
         <main className="list">
-          {listings.length >= 2 && <ListToolbar listings={listings} settings={settings} onChange={setSettings} />}
+          {listings.length >= 2 && <ListToolbar listings={listings} dongs={dongs} settings={settings} onChange={setSettings} />}
           {rows.map(({ listing, cost }) => (
             <ListingCard
               key={listing.id}
@@ -231,6 +245,7 @@ export default function App() {
       {editing && (
         <ListingForm
           initial={editing.mode === 'edit' ? editing.listing : undefined}
+          dongs={dongs}
           onSave={save}
           onCancel={() => setEditing(null)}
         />

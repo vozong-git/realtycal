@@ -16,8 +16,7 @@ function listing(partial: Partial<Listing>): Listing {
     loanAmount: 0,
     loanRate: 0,
     loanYears: 30,
-    movingCost: 0,
-    otherCost: 0,
+    dong: '',
     memo: '',
     link: '',
     ...partial,
@@ -104,10 +103,10 @@ describe('acquisitionTax', () => {
 });
 
 describe('calcOneTimeCost', () => {
-  it('전·월세는 취득세 없음, 이사비·기타 합산', () => {
-    const c = calcOneTimeCost(listing({ type: 'jeonse', price: 30000, movingCost: 150, otherCost: 50 }));
+  it('전·월세는 취득세 없이 중개수수료만', () => {
+    const c = calcOneTimeCost(listing({ type: 'jeonse', price: 30000 }));
     expect(c.acquisitionTax).toBe(0);
-    expect(c.total).toBeCloseTo(90 + 150 + 50);
+    expect(c.total).toBeCloseTo(90);
   });
   it('매매는 중개수수료 + 취득세', () => {
     const c = calcOneTimeCost(listing({ type: 'purchase', price: 50000 }));

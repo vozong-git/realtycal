@@ -17,7 +17,7 @@ import type { Listing } from './types';
 
 let db: Firestore | null = null;
 
-const OPTIONAL_FIELDS = ['movingCost', 'otherCost', 'memo', 'link'] as const;
+const OPTIONAL_FIELDS = ['dong', 'memo', 'link'] as const;
 
 /** 비어 있는 선택 항목은 빼고 저장해 문서를 작게 유지한다 */
 function toDoc(listing: Listing): Partial<Listing> {
