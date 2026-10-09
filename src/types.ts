@@ -38,12 +38,13 @@ export interface Settings {
 }
 
 export const SORT_LABEL: Record<SortKey, string> = {
-  'monthly-desc': '월 고정비 높은순',
-  monthly: '월 고정비 낮은순',
-  'price-desc': '보증금 높은순',
-  price: '보증금 낮은순',
-  'loan-desc': '대출금 높은순',
-  loan: '대출금 낮은순',
+  // ↓ 높은순(내림차순), ↑ 낮은순(오름차순)
+  'monthly-desc': '월 고정비 ↓',
+  monthly: '월 고정비 ↑',
+  'price-desc': '보증금 ↓',
+  price: '보증금 ↑',
+  'loan-desc': '대출금 ↓',
+  loan: '대출금 ↑',
 };
 
 export const TYPE_LABEL: Record<LeaseType, string> = {

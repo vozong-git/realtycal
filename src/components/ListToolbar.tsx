@@ -37,7 +37,8 @@ export default function ListToolbar({ listings, dongs, settings, onChange }: Pro
         </div>
         {/* 선택된 항목 길이만큼만 자리를 차지하도록, 보이는 글자 위에 투명한 select를 겹친다 */}
         <label className="sort">
-          {SORT_LABEL[settings.sortBy]} ▾
+          {SORT_LABEL[settings.sortBy]}
+          <span className="caret">▾</span>
           <select
             aria-label="정렬"
             value={settings.sortBy}
