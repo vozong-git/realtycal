@@ -33,7 +33,7 @@ export const loadListings = () => read<Listing[]>(LISTINGS_KEY, []);
 export const saveListings = (listings: Listing[]) => write(LISTINGS_KEY, listings);
 export function loadSettings(): Settings {
   const settings = { ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(SETTINGS_KEY, {}) };
-  // 없어진 정렬 기준(이름순·입주 현금순)이 저장돼 있으면 기본값으로
+  // 없어진 정렬 기준(이름순·입주 현금순·자기자금순)이 저장돼 있으면 기본값으로
   if (!(settings.sortBy in SORT_LABEL)) settings.sortBy = DEFAULT_SETTINGS.sortBy;
   return settings;
 }

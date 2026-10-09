@@ -101,7 +101,8 @@ export default function App() {
   const rows = useMemo(() => {
     const sortValue = {
       monthly: (r: Row) => r.cost.total,
-      capital: (r: Row) => r.cost.ownCapital,
+      // 보증금 / 전세금 / 매매가
+      price: (r: Row) => r.listing.price,
     };
     return listings
       .filter((l) => settings.typeFilter === 'all' || l.type === settings.typeFilter)
