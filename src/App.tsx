@@ -133,12 +133,6 @@ export default function App() {
     setEditing(null);
   }
 
-  function duplicate(listing: Listing) {
-    storeRef.current
-      ?.upsert({ ...listing, id: crypto.randomUUID(), name: `${listing.name} (복사)` })
-      .catch(handleWriteError);
-  }
-
   function remove(listing: Listing) {
     if (confirm(`"${listing.name}"을(를) 삭제할까요?`)) {
       storeRef.current?.remove(listing.id).catch(handleWriteError);
@@ -237,7 +231,6 @@ export default function App() {
               cost={cost}
               cheapest={listing.id === cheapestId}
               onEdit={() => setEditing({ mode: 'edit', listing })}
-              onDuplicate={() => duplicate(listing)}
               onDelete={() => remove(listing)}
             />
           ))}
