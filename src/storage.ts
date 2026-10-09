@@ -1,4 +1,4 @@
-import type { Listing, Settings } from './types';
+import { SORT_LABEL, type Listing, type Settings } from './types';
 
 const LISTINGS_KEY = 'realtycal.listings';
 const SETTINGS_KEY = 'realtycal.settings';
@@ -31,7 +31,12 @@ function write(key: string, value: unknown) {
 
 export const loadListings = () => read<Listing[]>(LISTINGS_KEY, []);
 export const saveListings = (listings: Listing[]) => write(LISTINGS_KEY, listings);
-export const loadSettings = () => ({ ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(SETTINGS_KEY, {}) });
+export function loadSettings(): Settings {
+  const settings = { ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(SETTINGS_KEY, {}) };
+  // 없어진 정렬 기준(이름순·입주 현금순)이 저장돼 있으면 기본값으로
+  if (!(settings.sortBy in SORT_LABEL)) settings.sortBy = DEFAULT_SETTINGS.sortBy;
+  return settings;
+}
 export const saveSettings = (settings: Settings) => write(SETTINGS_KEY, settings);
 export const loadRoom = () => read<string | null>(ROOM_KEY, null);
 export const saveRoom = (roomId: string) => write(ROOM_KEY, roomId);

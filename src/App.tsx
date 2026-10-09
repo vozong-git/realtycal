@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { calcCost, calcOneTimeCost } from './calc';
+import { calcCost } from './calc';
 import ListingCard from './components/ListingCard';
 import ListingForm from './components/ListingForm';
 import ListToolbar from './components/ListToolbar';
@@ -101,17 +101,15 @@ export default function App() {
   const rows = useMemo(() => {
     const sortValue = {
       monthly: (r: Row) => r.cost.total,
-      cash: (r: Row) => r.cost.ownCapital + calcOneTimeCost(r.listing).total,
       capital: (r: Row) => r.cost.ownCapital,
     };
     return listings
       .filter((l) => settings.typeFilter === 'all' || l.type === settings.typeFilter)
       .filter((l) => !settings.dongFilter || l.dong === settings.dongFilter)
       .map((listing) => ({ listing, cost: calcCost(listing, settings) }))
-      .sort((a, b) =>
-        settings.sortBy === 'name'
-          ? a.listing.name.localeCompare(b.listing.name, 'ko')
-          : sortValue[settings.sortBy](a) - sortValue[settings.sortBy](b) || a.cost.total - b.cost.total,
+      .sort(
+        (a, b) =>
+          sortValue[settings.sortBy](a) - sortValue[settings.sortBy](b) || a.cost.total - b.cost.total,
       );
   }, [listings, settings]);
 
