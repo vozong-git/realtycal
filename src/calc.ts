@@ -88,7 +88,7 @@ const LEASE_BRACKETS: [number, number, number?][] = [
 ];
 
 function feeByBrackets(amount: number, brackets: [number, number, number?][]): number {
-  if (amount <= 0) return 0;
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
   const [, rate, cap] = brackets.find(([upper]) => amount < upper)!;
   const fee = (amount * rate) / 100;
   return cap === undefined ? fee : Math.min(fee, cap);

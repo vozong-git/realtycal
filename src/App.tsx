@@ -15,11 +15,7 @@ type Row = { listing: Listing; cost: ReturnType<typeof calcCost> };
 
 type Editing = { mode: 'new' } | { mode: 'edit'; listing: Listing } | null;
 
-type Sync =
-  | { status: 'local' }
-  | { status: 'connecting' }
-  | { status: 'shared'; roomId: string }
-  | { status: 'error'; message: string };
+type Sync = { status: 'local' } | { status: 'connecting' } | { status: 'shared'; roomId: string };
 
 export default function App() {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -28,6 +24,8 @@ export default function App() {
   const [rateText, setRateText] = useState(String(settings.depositRate));
   const [sync, setSync] = useState<Sync>(firebaseConfig ? { status: 'connecting' } : { status: 'local' });
   const [toast, setToast] = useState('');
+  const [error, setError] = useState('');
+  const [offline, setOffline] = useState(false);
   const storeRef = useRef<ListingStore | null>(null);
 
   useEffect(() => saveSettings(settings), [settings]);
@@ -35,7 +33,11 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     let unsubscribe = () => {};
-    const onError = (e: Error) => setSync({ status: 'error', message: e.message });
+    const onError = (e: Error) => {
+      setError(e.message);
+      // 처음 연결부터 실패하면 '불러오는 중'에 멈추지 않게 지금 있는 목록이라도 보여준다
+      setSync((s) => (s.status === 'connecting' ? { status: 'local' } : s));
+    };
 
     (async () => {
       let store: ListingStore;
@@ -54,8 +56,9 @@ export default function App() {
       }
       if (cancelled) return;
       storeRef.current = store;
-      unsubscribe = store.subscribe((next) => {
+      unsubscribe = store.subscribe((next, isOffline) => {
         setListings(next);
+        setOffline(isOffline);
         if (roomId) setSync({ status: 'shared', roomId });
       }, onError);
     })().catch(onError);
@@ -81,8 +84,18 @@ export default function App() {
   }, [toast]);
 
   function handleWriteError(e: unknown) {
-    setSync({ status: 'error', message: e instanceof Error ? e.message : String(e) });
+    setError(e instanceof Error ? e.message : String(e));
   }
+
+  // 폼이 열려 있는 동안 뒤 화면이 같이 스크롤되지 않게
+  useEffect(() => {
+    if (!editing) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [editing]);
 
   async function share() {
     if (sync.status !== 'shared') return;
@@ -129,7 +142,10 @@ export default function App() {
     rows.length > 1 ? rows.reduce((min, r) => (r.cost.total < min.cost.total ? r : min)).listing.id : null;
 
   function save(listing: Listing) {
-    storeRef.current?.upsert(listing).catch(handleWriteError);
+    storeRef.current
+      ?.upsert(listing)
+      .then(() => setError(''))
+      .catch(handleWriteError);
     setEditing(null);
   }
 
@@ -155,10 +171,13 @@ export default function App() {
         </div>
       </header>
 
-      {sync.status === 'error' && (
-        <div className="banner error">
-          공유 저장소에 연결하지 못했어요. 인터넷 연결이나 Firestore 규칙을 확인해 주세요.
-          <small>{sync.message}</small>
+      {error && (
+        <div className="banner error" role="alert">
+          공유 저장소에 저장하거나 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.
+          <small>{error}</small>
+          <button className="ghost" onClick={() => setError('')}>
+            닫기
+          </button>
         </div>
       )}
 
@@ -212,6 +231,10 @@ export default function App() {
             </button>
           </div>
         </>
+      ) : rows.length === 0 && offline ? (
+        <div className="empty">
+          <p>인터넷에 연결되면 같이 보는 매물 목록을 불러올게요.</p>
+        </div>
       ) : rows.length === 0 ? (
         <div className="empty">
           <p>아직 매물이 없어요.</p>

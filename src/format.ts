@@ -33,6 +33,7 @@ export function withCommas(text: string): string {
 export function normalizeLink(text: string): string {
   const t = text.trim();
   if (!t) return '';
-  const url = /^[a-z][a-z\d+.-]*:/i.test(t) ? t : `https://${t}`;
+  // 'javascript:' 같은 스킴은 버리고, 'example.com:8080' 처럼 콜론 뒤가 포트 번호면 주소로 본다
+  const url = /^[a-z][a-z\d+.-]*:(?!\d)/i.test(t) ? t : `https://${t}`;
   return /^https?:\/\//i.test(url) ? url : '';
 }

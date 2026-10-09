@@ -66,8 +66,8 @@ button.danger { color: var(--danger); }
 .settings .toggle input { width: 18px; height: 18px; accent-color: var(--primary); }
 .settings .rate { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; font-size: 14px; }
 .settings .rate input {
-  width: 56px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px;
-  background: var(--bg); text-align: right;
+  width: 60px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); text-align: right; font-size: 16px; /* 16px 미만이면 iOS가 화면을 확대한다 */
 }
 
 .empty { text-align: center; color: var(--muted); padding: 48px 16px; }
@@ -200,3 +200,6 @@ button.chip.empty-type { opacity: 0.45; }
 
 .card h3 .dong { margin-left: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
 .row.name-row { grid-template-columns: 2fr 1fr; margin-bottom: 12px; }
+
+.hint.warn { color: var(--danger); }
+.banner button { display: block; margin-top: 6px; padding: 4px 0; color: inherit; text-decoration: underline; }

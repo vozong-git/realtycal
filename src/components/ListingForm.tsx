@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { PRICE_LABEL, TYPE_LABEL, type LeaseType, type Listing } from '../types';
 import { formatManwon, normalizeLink, parseNumber, withCommas } from '../format';
 
@@ -40,6 +40,24 @@ export default function ListingForm({ initial, dongs, onSave, onCancel }: Props)
   const [link, setLink] = useState(initial?.link ?? '');
   const hasExtra = Boolean(initial?.memo || initial?.link);
 
+  // 처음 연 상태와 달라졌는지: 바깥을 눌러 닫을 때 입력을 잃지 않게
+  const snapshot = JSON.stringify({ type, name, dong, values, memo, link });
+  const initialSnapshot = useRef(snapshot);
+  const dirty = snapshot !== initialSnapshot.current;
+  const [warning, setWarning] = useState('');
+  // 입력을 고치면 저장 시 띄운 안내는 지운다
+  useEffect(() => setWarning(''), [snapshot]);
+
+  function requestClose() {
+    if (!dirty || confirm('입력한 내용을 저장하지 않고 닫을까요?')) onCancel();
+  }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && requestClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   const set = (field: Fields) => (text: string) =>
     setValues((v) => ({ ...v, [field]: withCommas(text) }));
 
@@ -47,6 +65,10 @@ export default function ListingForm({ initial, dongs, onSave, onCancel }: Props)
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (num('price') <= 0 && !(type === 'monthly' && num('monthlyRent') > 0)) {
+      setWarning(type === 'monthly' ? '보증금이나 월세를 입력해 주세요.' : type === 'jeonse' ? '전세금을 입력해 주세요.' : '매매가를 입력해 주세요.');
+      return;
+    }
     onSave({
       id: initial?.id ?? crypto.randomUUID(),
       name: name.trim() || `${TYPE_LABEL[type]} 매물`,
@@ -64,8 +86,15 @@ export default function ListingForm({ initial, dongs, onSave, onCancel }: Props)
   }
 
   return (
-    <div className="overlay" onClick={onCancel}>
-      <form className="sheet" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
+    <div className="overlay" onClick={requestClose}>
+      <form
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={initial ? '매물 수정' : '매물 추가'}
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2>{initial ? '매물 수정' : '매물 추가'}</h2>
 
         <div className="segmented" role="radiogroup" aria-label="거래 유형">
@@ -86,11 +115,22 @@ export default function ListingForm({ initial, dongs, onSave, onCancel }: Props)
         <div className="row name-row">
           <label className="field">
             <span>이름</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 역삼 오피스텔 3층" />
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="예: 역삼 오피스텔 3층"
+              maxLength={100}
+            />
           </label>
           <label className="field">
             <span>동</span>
-            <input value={dong} onChange={(e) => setDong(e.target.value)} placeholder="예: 성수동" list="dong-options" />
+            <input
+              value={dong}
+              onChange={(e) => setDong(e.target.value)}
+              placeholder="예: 성수동"
+              list="dong-options"
+              maxLength={30}
+            />
             <datalist id="dong-options">
               {dongs.map((d) => (
                 <option key={d} value={d} />
@@ -105,6 +145,10 @@ export default function ListingForm({ initial, dongs, onSave, onCancel }: Props)
         )}
         <MoneyField label="관리비 (월)" value={values.maintenance} onChange={set('maintenance')} />
 
+        {num('price') >= 1000000 && (
+          <p className="hint warn">금액 단위는 만원이에요. 3억은 30,000으로 입력해요.</p>
+        )}
+
         <div className="group-title">대출</div>
         <MoneyField label="대출 금액" value={values.loanAmount} onChange={set('loanAmount')} showEok />
         <div className="row">
@@ -113,6 +157,9 @@ export default function ListingForm({ initial, dongs, onSave, onCancel }: Props)
             <NumberField label="상환 기간" unit="년" value={values.loanYears} onChange={set('loanYears')} />
           )}
         </div>
+        {num('loanAmount') > num('price') && num('price') > 0 && (
+          <p className="hint warn">대출 금액이 {PRICE_LABEL[type]}보다 커요. 다시 확인해 주세요.</p>
+        )}
         <p className="hint">
           {type === 'purchase'
             ? '원리금균등상환 기준으로 원금까지 포함해 계산해요.'
@@ -140,9 +187,16 @@ export default function ListingForm({ initial, dongs, onSave, onCancel }: Props)
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder="네이버 부동산 등 주소"
+              maxLength={490}
             />
           </label>
         </details>
+
+        {warning && (
+          <p className="hint warn" role="alert">
+            {warning}
+          </p>
+        )}
 
         <div className="actions">
           <button type="button" className="ghost" onClick={onCancel}>

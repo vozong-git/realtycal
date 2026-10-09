@@ -8,6 +8,7 @@ import {
   initializeFirestore,
   onSnapshot,
   persistentLocalCache,
+  persistentMultipleTabManager,
   setDoc,
   writeBatch,
   type Firestore,
@@ -32,7 +33,9 @@ function getDb(config: FirebaseOptions): Firestore {
     db = getFirestore(getApp());
   } else {
     // 오프라인 캐시: 지하철 등 끊긴 곳에서도 보이고, 다시 연결되면 동기화
-    db = initializeFirestore(initializeApp(config), { localCache: persistentLocalCache() });
+    db = initializeFirestore(initializeApp(config), {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
     // 개발용: VITE_FIRESTORE_EMULATOR=localhost:8080 이면 로컬 에뮬레이터에 연결
     const emulator = import.meta.env.VITE_FIRESTORE_EMULATOR as string | undefined;
     if (emulator) {
@@ -51,7 +54,13 @@ export function createFirestoreStore(config: FirebaseOptions, roomId: string) {
     subscribe(onChange, onError) {
       return onSnapshot(
         listingsRef,
-        (snap) => onChange(snap.docs.map((d) => normalizeListing(d.data() as Partial<Listing>, d.id))),
+        // 연결 상태만 바뀌어도 알려 받아 '오프라인' 표시를 갱신한다
+        { includeMetadataChanges: true },
+        (snap) =>
+          onChange(
+            snap.docs.map((d) => normalizeListing(d.data(), d.id)),
+            snap.metadata.fromCache,
+          ),
         onError,
       );
     },
@@ -63,7 +72,9 @@ export function createFirestoreStore(config: FirebaseOptions, roomId: string) {
     },
     importListings(listings) {
       const batch = writeBatch(listingsRef.firestore);
-      listings.forEach((l) => batch.set(doc(listingsRef, l.id), toDoc(normalizeListing(l, l.id))));
+      listings.forEach((l) =>
+        batch.set(doc(listingsRef, l.id), toDoc(normalizeListing(l as unknown as Record<string, unknown>, l.id))),
+      );
       return batch.commit();
     },
   };
