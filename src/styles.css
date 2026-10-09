@@ -103,6 +103,7 @@ button.danger { color: var(--danger); }
 .note { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
 
 .card footer { display: flex; justify-content: flex-end; gap: 4px; margin-top: 8px; }
+button.icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; }
 
 /* 폼 (모바일: 바텀시트, 데스크탑: 모달) */
 .overlay {

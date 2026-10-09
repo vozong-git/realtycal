@@ -1,5 +1,6 @@
 import { calcOneTimeCost, type CostBreakdown } from '../calc';
 import { formatManwon, formatMonthly } from '../format';
+import { CopyIcon, EditIcon, TrashIcon } from './icons';
 import { PRICE_LABEL, TYPE_LABEL, type Listing } from '../types';
 
 interface Props {
@@ -103,9 +104,15 @@ export default function ListingCard({ listing, cost, cheapest, onEdit, onDuplica
       </details>
 
       <footer>
-        <button className="ghost" onClick={onEdit}>수정</button>
-        <button className="ghost" onClick={onDuplicate}>복제</button>
-        <button className="ghost danger" onClick={onDelete}>삭제</button>
+        <button className="ghost icon" onClick={onEdit} aria-label="수정" title="수정">
+          <EditIcon />
+        </button>
+        <button className="ghost icon" onClick={onDuplicate} aria-label="복제" title="복제">
+          <CopyIcon />
+        </button>
+        <button className="ghost icon danger" onClick={onDelete} aria-label="삭제" title="삭제">
+          <TrashIcon />
+        </button>
       </footer>
     </article>
   );
