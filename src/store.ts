@@ -17,6 +17,10 @@ const DEFAULTS: Omit<Listing, 'id'> = {
   loanAmount: 0,
   loanRate: 0,
   loanYears: 30,
+  movingCost: 0,
+  otherCost: 0,
+  memo: '',
+  link: '',
 };
 
 /** 저장된 데이터에 빠진 필드가 있어도 안전하게 채운다 */

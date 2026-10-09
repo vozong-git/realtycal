@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { PRICE_LABEL, TYPE_LABEL, type LeaseType, type Listing } from '../types';
-import { formatManwon, parseNumber, withCommas } from '../format';
+import { formatManwon, normalizeLink, parseNumber, withCommas } from '../format';
 
 interface Props {
   initial?: Listing;
@@ -8,7 +8,15 @@ interface Props {
   onCancel: () => void;
 }
 
-type Fields = 'price' | 'monthlyRent' | 'maintenance' | 'loanAmount' | 'loanRate' | 'loanYears';
+type Fields =
+  | 'price'
+  | 'monthlyRent'
+  | 'maintenance'
+  | 'loanAmount'
+  | 'loanRate'
+  | 'loanYears'
+  | 'movingCost'
+  | 'otherCost';
 
 const TYPES: LeaseType[] = ['monthly', 'jeonse', 'purchase'];
 
@@ -26,7 +34,12 @@ export default function ListingForm({ initial, onSave, onCancel }: Props) {
     loanAmount: toText(initial?.loanAmount),
     loanRate: initial?.loanRate ? String(initial.loanRate) : '',
     loanYears: String(initial?.loanYears ?? 30),
+    movingCost: toText(initial?.movingCost),
+    otherCost: toText(initial?.otherCost),
   });
+  const [memo, setMemo] = useState(initial?.memo ?? '');
+  const [link, setLink] = useState(initial?.link ?? '');
+  const hasExtra = Boolean(initial?.movingCost || initial?.otherCost || initial?.memo || initial?.link);
 
   const set = (field: Fields) => (text: string) =>
     setValues((v) => ({ ...v, [field]: withCommas(text) }));
@@ -45,6 +58,10 @@ export default function ListingForm({ initial, onSave, onCancel }: Props) {
       loanAmount: num('loanAmount'),
       loanRate: num('loanRate'),
       loanYears: num('loanYears') || 30,
+      movingCost: num('movingCost'),
+      otherCost: num('otherCost'),
+      memo: memo.trim(),
+      link: normalizeLink(link),
     });
   }
 
@@ -69,7 +86,7 @@ export default function ListingForm({ initial, onSave, onCancel }: Props) {
         </div>
 
         <label className="field">
-          <span>이름 / 메모</span>
+          <span>이름</span>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 역삼 오피스텔 3층" />
         </label>
 
@@ -92,6 +109,36 @@ export default function ListingForm({ initial, onSave, onCancel }: Props) {
             ? '원리금균등상환 기준으로 원금까지 포함해 계산해요.'
             : '전·월세 대출은 이자만 내는 만기일시상환 기준이에요.'}
         </p>
+
+        <details className="more-fields" open={hasExtra}>
+          <summary>이사 비용 · 메모 (선택)</summary>
+          <p className="hint">중개수수료{type === 'purchase' && '·취득세'}는 자동으로 계산돼요.</p>
+          <div className="row">
+            <MoneyField label="이사비" value={values.movingCost} onChange={set('movingCost')} />
+            <MoneyField label="기타 (청소 등)" value={values.otherCost} onChange={set('otherCost')} />
+          </div>
+          <label className="field">
+            <span>메모</span>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              rows={3}
+              maxLength={1000}
+              placeholder="예: 남향, 5층, 역까지 도보 7분"
+            />
+          </label>
+          <label className="field">
+            <span>매물 링크</span>
+            <input
+              inputMode="url"
+              autoCapitalize="off"
+              autoCorrect="off"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="네이버 부동산 등 주소"
+            />
+          </label>
+        </details>
 
         <div className="actions">
           <button type="button" className="ghost" onClick={onCancel}>

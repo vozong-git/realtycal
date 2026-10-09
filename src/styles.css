@@ -156,3 +156,25 @@ button.share { color: var(--primary); }
   background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px;
   font-size: 14px; max-width: calc(100% - 32px);
 }
+
+/* 접어 두는 영역: 기본 화면은 그대로, 펼쳐야 보인다 */
+details > summary { cursor: pointer; list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: '▸'; display: inline-block; width: 1.1em; }
+details[open] > summary::before { content: '▾'; }
+
+.more { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.more > summary { font-size: 13px; color: var(--muted); }
+.more .meta .sum { padding-top: 4px; border-top: 1px solid var(--border); font-weight: 600; }
+.more .memo { margin: 10px 0 0; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+.more .link { display: inline-block; margin-top: 8px; font-size: 14px; color: var(--primary); text-decoration: none; }
+
+.more-fields { margin-top: 16px; }
+.more-fields > summary { font-weight: 700; font-size: 14px; padding: 4px 0; }
+.more-fields .hint { margin: 4px 0 10px; }
+.field textarea {
+  width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg); font: inherit; font-size: 16px; color: inherit; resize: vertical;
+}
+.field textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+.row + .field { margin-top: 12px; }

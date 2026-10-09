@@ -17,6 +17,15 @@ import type { Listing } from './types';
 
 let db: Firestore | null = null;
 
+const OPTIONAL_FIELDS = ['movingCost', 'otherCost', 'memo', 'link'] as const;
+
+/** 비어 있는 선택 항목은 빼고 저장해 문서를 작게 유지한다 */
+function toDoc(listing: Listing): Partial<Listing> {
+  const data: Partial<Listing> = { ...listing };
+  for (const key of OPTIONAL_FIELDS) if (!data[key]) delete data[key];
+  return data;
+}
+
 function getDb(config: FirebaseOptions): Firestore {
   if (db) return db;
   if (getApps().length) {
@@ -47,14 +56,14 @@ export function createFirestoreStore(config: FirebaseOptions, roomId: string) {
       );
     },
     upsert(listing) {
-      return setDoc(doc(listingsRef, listing.id), listing);
+      return setDoc(doc(listingsRef, listing.id), toDoc(listing));
     },
     remove(id) {
       return deleteDoc(doc(listingsRef, id));
     },
     importListings(listings) {
       const batch = writeBatch(listingsRef.firestore);
-      listings.forEach((l) => batch.set(doc(listingsRef, l.id), l));
+      listings.forEach((l) => batch.set(doc(listingsRef, l.id), toDoc(normalizeListing(l, l.id))));
       return batch.commit();
     },
   };

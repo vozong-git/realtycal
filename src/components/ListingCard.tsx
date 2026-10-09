@@ -1,4 +1,4 @@
-import type { CostBreakdown } from '../calc';
+import { calcOneTimeCost, type CostBreakdown } from '../calc';
 import { formatManwon, formatMonthly } from '../format';
 import { PRICE_LABEL, TYPE_LABEL, type Listing } from '../types';
 
@@ -18,6 +18,14 @@ export default function ListingCard({ listing, cost, cheapest, onEdit, onDuplica
     ['이자', cost.interest],
     ['원금', cost.principal],
     ['기회비용', cost.opportunityCost],
+  ];
+
+  const oneTime = calcOneTimeCost(listing);
+  const oneTimeItems: [string, number][] = [
+    ['중개수수료 (상한)', oneTime.brokerFee],
+    ['취득세 (1주택 기준)', oneTime.acquisitionTax],
+    ['이사비', oneTime.movingCost],
+    ['기타', oneTime.otherCost],
   ];
 
   return (
@@ -64,6 +72,34 @@ export default function ListingCard({ listing, cost, cheapest, onEdit, onDuplica
       {cost.principal > 0 && (
         <p className="note">원금 {formatMonthly(cost.principal)}만원은 집값으로 쌓이는 돈이에요 (첫 달 기준).</p>
       )}
+
+      <details className="more">
+        <summary>
+          이사 비용 약 {formatMonthly(oneTime.total)}만원
+          {(listing.memo || listing.link) && ' · 메모'}
+        </summary>
+        <dl className="meta">
+          {oneTimeItems
+            .filter(([, v]) => v > 0)
+            .map(([label, v]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{formatMonthly(v)}만원</dd>
+              </div>
+            ))}
+          <div className="sum">
+            <dt>입주 때 필요한 현금</dt>
+            <dd>{formatManwon(cost.ownCapital + oneTime.total)}</dd>
+          </div>
+        </dl>
+        <p className="note">중개수수료는 법정 상한요율 기준이며 부가세는 별도예요.</p>
+        {listing.memo && <p className="memo">{listing.memo}</p>}
+        {/^https?:\/\//i.test(listing.link) && (
+          <a className="link" href={listing.link} target="_blank" rel="noopener noreferrer">
+            매물 링크 열기 ↗
+          </a>
+        )}
+      </details>
 
       <footer>
         <button className="ghost" onClick={onEdit}>수정</button>

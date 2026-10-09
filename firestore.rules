@@ -8,10 +8,15 @@ service cloud.firestore {
       allow read, delete: if roomId.size() >= 20;
       allow create, update: if roomId.size() >= 20
         && request.resource.data.keys().hasOnly(
-             ['id', 'name', 'type', 'price', 'monthlyRent', 'maintenance', 'loanAmount', 'loanRate', 'loanYears'])
+             ['id', 'name', 'type', 'price', 'monthlyRent', 'maintenance', 'loanAmount', 'loanRate', 'loanYears',
+              'movingCost', 'otherCost', 'memo', 'link'])
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 100
-        && request.resource.data.type in ['monthly', 'jeonse', 'purchase'];
+        && request.resource.data.type in ['monthly', 'jeonse', 'purchase']
+        && request.resource.data.get('memo', '') is string
+        && request.resource.data.get('memo', '').size() <= 1000
+        && request.resource.data.get('link', '') is string
+        && request.resource.data.get('link', '').size() <= 500;
     }
   }
 }

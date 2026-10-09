@@ -28,3 +28,11 @@ export function withCommas(text: string): string {
   const intPart = int ? Number(int).toLocaleString('ko-KR') : '';
   return rest.length ? `${intPart || '0'}.${rest.join('')}` : intPart;
 }
+
+/** 링크 입력을 http(s) 주소로 정리. 그 외 스킴은 버린다 */
+export function normalizeLink(text: string): string {
+  const t = text.trim();
+  if (!t) return '';
+  const url = /^[a-z][a-z\d+.-]*:/i.test(t) ? t : `https://${t}`;
+  return /^https?:\/\//i.test(url) ? url : '';
+}

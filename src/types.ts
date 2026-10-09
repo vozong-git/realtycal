@@ -14,6 +14,13 @@ export interface Listing {
   loanRate: number;
   /** 상환 기간(년), 매매만 사용 */
   loanYears: number;
+  /** 이사비 (1회) */
+  movingCost: number;
+  /** 기타 1회성 비용: 청소, 인테리어 등 */
+  otherCost: number;
+  memo: string;
+  /** 매물 링크 (http/https만) */
+  link: string;
 }
 
 export interface Settings {

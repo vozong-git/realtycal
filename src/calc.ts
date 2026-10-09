@@ -57,3 +57,71 @@ export function calcCost(listing: Listing, settings: Settings): CostBreakdown {
     ownCapital,
   };
 }
+
+export interface OneTimeCost {
+  /** 중개수수료 (법정 상한요율, 부가세 별도) */
+  brokerFee: number;
+  /** 취득세 + 지방교육세 (매매만) */
+  acquisitionTax: number;
+  movingCost: number;
+  otherCost: number;
+  total: number;
+}
+
+/** [이 금액 미만, 요율 %, 한도(만원)] — 2021.10 개정 주택 중개보수 상한 */
+const SALE_BRACKETS: [number, number, number?][] = [
+  [5000, 0.6, 25],
+  [20000, 0.5, 80],
+  [90000, 0.4],
+  [120000, 0.5],
+  [150000, 0.6],
+  [Infinity, 0.7],
+];
+const LEASE_BRACKETS: [number, number, number?][] = [
+  [5000, 0.5, 20],
+  [10000, 0.4, 30],
+  [60000, 0.3],
+  [120000, 0.4],
+  [150000, 0.5],
+  [Infinity, 0.6],
+];
+
+function feeByBrackets(amount: number, brackets: [number, number, number?][]): number {
+  if (amount <= 0) return 0;
+  const [, rate, cap] = brackets.find(([upper]) => amount < upper)!;
+  const fee = (amount * rate) / 100;
+  return cap === undefined ? fee : Math.min(fee, cap);
+}
+
+/** 중개수수료 상한. 월세 거래금액 = 보증금 + 월세×100 (5천만 미만이면 ×70) */
+export function brokerFee(listing: Listing): number {
+  if (listing.type === 'purchase') return feeByBrackets(listing.price, SALE_BRACKETS);
+  if (listing.type === 'jeonse') return feeByBrackets(listing.price, LEASE_BRACKETS);
+  let amount = listing.price + listing.monthlyRent * 100;
+  if (amount < 5000) amount = listing.price + listing.monthlyRent * 70;
+  return feeByBrackets(amount, LEASE_BRACKETS);
+}
+
+/** 주택 취득세 + 지방교육세 (1주택, 전용 85㎡ 이하, 감면 미반영) */
+export function acquisitionTax(price: number): number {
+  if (price <= 0) return 0;
+  let rate: number;
+  if (price <= 60000) rate = 1;
+  else if (price <= 90000) rate = Math.round(((price / 10000) * (2 / 3) - 3) * 10000) / 10000;
+  else rate = 3;
+  return (price * rate * 1.1) / 100;
+}
+
+export function calcOneTimeCost(listing: Listing): OneTimeCost {
+  const fee = brokerFee(listing);
+  const tax = listing.type === 'purchase' ? acquisitionTax(listing.price) : 0;
+  const moving = listing.movingCost || 0;
+  const other = listing.otherCost || 0;
+  return {
+    brokerFee: fee,
+    acquisitionTax: tax,
+    movingCost: moving,
+    otherCost: other,
+    total: fee + tax + moving + other,
+  };
+}
